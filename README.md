@@ -1,6 +1,6 @@
 # 青蛙過河 · 超級蛙蛙大冒險
 
-作者：*ArchieKUO*　版本：v1.2.2（橫式魔王關不再縮小，場地跟一般關一樣大；v1.2.1 首頁作者字樣放大）
+作者：*ArchieKUO*　版本：v1.2.3（網頁版支援 iPhone「加到主畫面」：全螢幕、有圖示；v1.2.2 橫式魔王關不再縮小，場地跟一般關一樣大；v1.2.1 首頁作者字樣放大）
 
 HTML5 Canvas 做的青蛙過河（Frogger）冒險遊戲，全部畫面都用程式畫出來、音效與音樂用 WebAudio 合成，不需要任何圖片或音檔。
 
@@ -24,6 +24,12 @@ HTML5 Canvas 做的青蛙過河（Frogger）冒險遊戲，全部畫面都用程
 ## 網頁版（電腦直接玩）
 推送到 `main` 後 GitHub Actions 會把 `www/` 放到 `gh-pages` 分支，用 GitHub Pages 發佈：
 https://nmymdf.github.io/frog/
+
+### iPhone 也能玩
+用 Safari 開上面的網址 → 分享鈕 → 「加入主畫面」，之後從主畫面圖示開啟就是全螢幕（沒有網址列）。
+- 要先點一下畫面才會有聲音；側邊靜音開關打開時網頁沒有聲音；iPhone 網頁沒有震動
+- 存檔在該瀏覽器裡，跟 Android 版互不相通
+- 圖示與設定檔（`www/icons/`、`www/manifest-vX.Y.Z.webmanifest`）檔名帶版本；換版請用 `tools/bump_version.sh 1.2.4`，會一起改名並更新引用
 
 ## 取得 Android APK
 推送到 `main` 後 GitHub Actions 會自動編譯，APK 會放在 [`apk` 分支](../../tree/apk)：
