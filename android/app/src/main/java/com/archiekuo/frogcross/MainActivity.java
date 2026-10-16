@@ -146,6 +146,12 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> applyOrientation(m));
         }
 
+        /** 遊戲裡的「離開遊戲」鈕（已經過確認）→ 關閉整個 App */
+        @JavascriptInterface
+        public void exitApp() {
+            runOnUiThread(() -> finishAndRemoveTask());
+        }
+
         @JavascriptInterface
         public void vibrate(int ms) {
             try {

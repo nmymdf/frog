@@ -116,6 +116,31 @@ const SettingsPanel = {
   },
 };
 
+
+/* ---------- 離開確認 ---------- */
+const ExitDialog = {
+  open: false,
+  show() { this.open = true; SND.play('click'); },
+  update() {
+    if (!this.open) return false;
+    if (UI.clicked('x_no')) { this.open = false; SND.play('back'); }
+    if (UI.clicked('x_yes')) { this.open = false; exitGame(); }
+    return true;
+  },
+  back() { if (!this.open) return false; this.open = false; SND.play('back'); return true; },
+  draw(c) {
+    if (!this.open) return;
+    c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(0, 0, SW, SH); UI.clearHits();
+    const pw = LAND ? 500 : W - 100, ph = 250, px = (SW - pw) / 2, py = LAND ? (SH - ph) / 2 : 330;
+    UI.panel(c, px, py, pw, ph, { r: 26 });
+    UI.text(c, '要離開遊戲嗎？', SW / 2, py + 52, { size: 32, color: '#8a4a10', align: 'center', weight: 900 });
+    UI.text(c, '你的進度都已經自動存好了', SW / 2, py + 100, { size: 17, color: '#6b4318', align: 'center', weight: 800, maxW: pw - 60 });
+    UI.button(c, 'x_no', px + 26, py + 128, (pw - 76) / 2, 62, '繼續玩', { style: 'green', size: 24 });
+    UI.button(c, 'x_yes', px + pw - 26 - (pw - 76) / 2, py + 128, (pw - 76) / 2, 62, '離開', { style: 'red', size: 24 });
+    credit(c, SW / 2, py + ph - 14, { size: 12.5, stroke: null, color: '#b87a0c' });
+  },
+};
+
 /* =====================================================================
    封面
    ===================================================================== */
@@ -128,7 +153,7 @@ class CoverScene {
     ];
     SND.music('cover'); Weather.init('pollen', SW, 0, SH); FX.clear();
   }
-  onBack() { return SettingsPanel.back(); }
+  onBack() { if (SettingsPanel.back() || ExitDialog.back()) return true; if (canExit()) { ExitDialog.show(); return true; } return false; }
   onDown(x, y) { UI.pointerDown(x, y); }
   onMove(x, y) { UI.pointerMove(x, y); }
   onUp(x, y) { UI.pointerUp(x, y); }
@@ -141,6 +166,7 @@ class CoverScene {
   update(dt) {
     UI.frame(dt); this.t += dt; FX.update(dt); Weather.update(dt);
     if (SettingsPanel.update()) return;
+    if (ExitDialog.update()) return;
     // 主角偶爾跳一下
     const h = this.hop; h.next -= dt;
     if (h.k < 1) h.k += dt / .55;
@@ -150,6 +176,7 @@ class CoverScene {
     if (UI.clicked('c_map')) { SND.play('click'); Game.go('map'); }
     if (UI.clicked('c_shop')) { SND.play('click'); Game.go('shop', 'cover'); }
     if (UI.clicked('c_set')) SettingsPanel.show();
+    if (UI.clicked('c_exit')) ExitDialog.show();
     if (UI.clicked('c_snd')) { Save.d.sound = !Save.d.sound; Save.write(); SND.play('click'); }
     if (UI.clicked('c_mus')) { Save.d.music = !Save.d.music; Save.write(); SND.refreshMusic(); }
   }
@@ -252,8 +279,10 @@ class CoverScene {
     wallet(c, 10, 10);
     UI.roundIcon(c, 'c_snd', 372, 24, 17, (cc, x, y, s) => Icons.speaker(cc, x, y, s, Save.d.sound), { style: Save.d.sound ? 'teal' : 'dark' });
     UI.roundIcon(c, 'c_mus', 416, 24, 17, (cc, x, y, s) => Icons.note(cc, x, y, s, Save.d.music), { style: Save.d.music ? 'purple' : 'dark' });
-    UI.text(c, '把青蛙平安送到對岸吧!', 225, 896, { size: 12, color: 'rgba(255,255,255,.8)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
+    if (canExit()) UI.button(c, 'c_exit', 140, 842, 170, 40, '離開遊戲', { style: 'dark', icon: Icons.exit, size: 18 });
+    UI.text(c, '把青蛙平安送到對岸吧!', 225, 900, { size: 12, color: 'rgba(255,255,255,.8)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
     SettingsPanel.draw(c);
+    ExitDialog.draw(c);
   }
 }
 

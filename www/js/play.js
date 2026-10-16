@@ -128,7 +128,7 @@ class PlayScene {
   }
   onKeyUp(k) { if (this.keyHold) { const m = { ArrowUp: 0, w: 0, W: 0, ArrowRight: 1, d: 1, D: 1, ArrowDown: 2, s: 2, S: 2, ArrowLeft: 3, a: 3, A: 3 }[k]; if (m === this.keyHold.d) this.keyHold = null; } }
   onBlur() { if (this.state === 'play' && !this.paused) this.togglePause(true); }
-  onBack() { if (this.state === 'lost') return false; this.togglePause(); return true; }
+  onBack() { if (this.state === 'lost') { SND.play('back'); Game.go('map'); return true; } this.togglePause(); return true; }
   togglePause(force) {
     if (this.state !== 'play' && this.state !== 'intro') return;
     this.paused = force !== undefined ? force : !this.paused;

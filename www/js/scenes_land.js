@@ -90,7 +90,7 @@ CoverScene.prototype.drawL = function (c) {
   for (let i = 0; i < 6; i++) { const sx = [lx - 170, lx + 170, lx - 120, lx + 130, lx - 195, lx + 205][i], sy2 = [40, 52, 150, 150, 110, 120][i]; c.save(); c.globalAlpha = .5 + Math.sin(t * 3 + i * 1.7) * .5; Icons.sparkle(c, sx, sy2, 7 + (i % 3) * 2); c.restore(); }
 
   // 右側按鈕區
-  UI.glass(c, cx - 176, 66, 352, 350, { r: 30, fill: 'rgba(5,36,74,.30)', border: 'rgba(255,255,255,.4)' });
+  UI.glass(c, cx - 176, 66, 352, 378, { r: 30, fill: 'rgba(5,36,74,.30)', border: 'rgba(255,255,255,.4)' });
   const cleared = Save.clearedCount(), nl = Save.nextLevel(), nd = levelDef(nl);
   UI.button(c, 'c_play', cx - 150, 82, 300, 68, cleared > 0 ? '繼續冒險' : '開始冒險', { style: 'green', icon: Icons.play, size: 30, pulse: true, shine: true });
   UI.text(c, `${nd.world.name} · 第 ${nd.li + 1} 關「${nd.def.name}」`, cx, 168, { size: 13.5, color: '#fff', stroke: 'rgba(0,30,60,.75)', strokeW: 4, align: 'center', weight: 800, maxW: 320 });
@@ -107,8 +107,10 @@ CoverScene.prototype.drawL = function (c) {
   wallet(c, 10, 10);
   UI.roundIcon(c, 'c_snd', SW - 70, 24, 17, (cc, x, y, s) => Icons.speaker(cc, x, y, s, Save.d.sound), { style: Save.d.sound ? 'teal' : 'dark' });
   UI.roundIcon(c, 'c_mus', SW - 26, 24, 17, (cc, x, y, s) => Icons.note(cc, x, y, s, Save.d.music), { style: Save.d.music ? 'purple' : 'dark' });
-  UI.text(c, '把青蛙平安送到對岸吧!', cx, 434, { size: 12,  color: 'rgba(255,255,255,.85)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
+  if (canExit()) UI.button(c, 'c_exit', cx - 85, 398, 170, 38, '離開遊戲', { style: 'dark', icon: Icons.exit, size: 17 });
+  if (false) UI.text(c, '把青蛙平安送到對岸吧!', cx, 434, { size: 12,  color: 'rgba(255,255,255,.85)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
   SettingsPanel.draw(c);
+  ExitDialog.draw(c);
 };
 
 /* =====================================================================

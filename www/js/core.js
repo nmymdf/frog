@@ -3,7 +3,7 @@
    青蛙過河：蛙蛙大冒險  —  核心引擎
    作者：ArchieKUO
    ===================================================================== */
-const VERSION = 'v1.2.4';
+const VERSION = 'v1.2.5';
 const AUTHOR = '作者：ArchieKUO';
 const W = 450, TILE = 50, COLS = 9;               // W = 場地寬度（9 格 × 50），永遠不變
 /* 場地列數與上下邊界：由 PlayScene.layout() 依「橫式／直式」設定（直式 13 列、橫式 9 列、橫式魔王關 13 列縮放） */
@@ -157,6 +157,9 @@ window.addEventListener('keyup', e => { Input.keys[e.key] = false; Game.onKeyUp 
 window.addEventListener('blur', () => { Input.keys = {}; Game.onBlur && Game.onBlur(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) Game.onBlur && Game.onBlur(); });
 /* Android 返回鍵 */
+/* 離開遊戲：只有 APK 外殼有（網頁版直接關分頁即可，所以不顯示離開鈕） */
+function canExit() { return !!(window.AndroidBridge && AndroidBridge.exitApp); }
+function exitGame() { try { AndroidBridge.exitApp(); } catch (e) { } }
 window.onAndroidBack = function () { return Game.onBack ? Game.onBack() : false; };
 function vibrate(ms) {
   if (!Save.d || !Save.d.vib) return;
