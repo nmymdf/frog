@@ -21,6 +21,10 @@ HTML5 Canvas 做的青蛙過河（Frogger）冒險遊戲，全部畫面都用程
 - 手機：在畫面上滑動 / 點一下往前跳，或用方向鍵；發射鈕發射武器
 - 電腦鍵盤：方向鍵或 WASD 移動，空白鍵發射，Esc 暫停
 
+## 網頁版（電腦直接玩）
+推送到 `main` 後 GitHub Actions 會把 `www/` 放到 `gh-pages` 分支，用 GitHub Pages 發佈：
+https://nmymdf.github.io/frog/
+
 ## 取得 Android APK
 推送到 `main` 後 GitHub Actions 會自動編譯，APK 會放在 [`apk` 分支](../../tree/apk)：
 `FrogCross-latest.apk`（永遠是最新版）。用手機瀏覽器下載並安裝即可。

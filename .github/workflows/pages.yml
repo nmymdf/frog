@@ -1,0 +1,58 @@
+name: Deploy Web (GitHub Pages)
+
+# 作者：ArchieKUO
+# 把遊戲本體 www/ 放到 gh-pages 分支，並（第一次）自動開啟 GitHub Pages
+# 網址：https://<帳號>.github.io/<倉庫名>/
+
+on:
+  push:
+    branches: [main]
+    paths: ['www/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 讀取版本號
+        id: ver
+        run: echo "v=$(grep -oP "VERSION = 'v\K[0-9.]+" www/js/core.js)" >> "$GITHUB_OUTPUT"
+
+      - name: 把 www 放到 gh-pages 分支
+        env:
+          VER: ${{ steps.ver.outputs.v }}
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          REMOTE="https://x-access-token:${TOKEN}@github.com/${REPO}.git"
+          rm -rf /tmp/site && mkdir /tmp/site
+          cp -r www/. /tmp/site/
+          touch /tmp/site/.nojekyll
+          cd /tmp/site
+          git init -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "網頁版 v${VER} (build ${GITHUB_RUN_NUMBER})"
+          git push "$REMOTE" HEAD:gh-pages --force
+
+      - name: 開啟 GitHub Pages（已開啟就略過）
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if gh api "repos/${REPO}/pages" >/dev/null 2>&1; then
+            echo "Pages 已經開啟"
+          else
+            gh api -X POST "repos/${REPO}/pages" -f "source[branch]=gh-pages" -f "source[path]=/" \
+              && echo "已自動開啟 Pages" \
+              || echo "::warning::沒有權限自動開啟 Pages，請到 Settings → Pages 把 Source 設成 Deploy from a branch：gh-pages / (root)"
+          fi
