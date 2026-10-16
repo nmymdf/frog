@@ -49,13 +49,14 @@ class PlayScene {
   /* ------------------------------------------------------------------
      版面：場地一律畫在「虛擬場地座標」(寬 450、高 FIELD_ROWS×50) 裡，再用 view 平移＋縮放放到螢幕上
        直式：13 列、k=1，場地在上方 80px 下面；方向鍵／發射鈕在下方控制區
-       橫式：一般關 9 列（k=1）、魔王關 13 列整場縮小（k=SH/650）；場地置中，左右是側邊面板
+       橫式：一次顯示 7～9 列（k=9/列數≥1，魔王關的場地排數跟著，絕不縮小）；場地置中，左右是側邊面板
      ------------------------------------------------------------------ */
   layout() {
     const key = (LAND ? 'L' : 'P') + SW + 'x' + SH;
     if (this.lkey === key) return;
     this.lkey = key;
-    const rows = LAND ? (this.isBoss ? 13 : 9) : 13;
+    // 橫式一次顯示 7～9 排（依螢幕寬度，見 landRows）、k≥1：魔王關也不縮小；魔王場比螢幕短時放大填滿，比螢幕長時鏡頭跟著走
+    const rows = LAND ? (this.isBoss ? Math.min(landRows(), this.rows) : landRows()) : 13;
     FIELD_ROWS = rows; FIELD_TOP = 0; FIELD_BOTTOM = rows * TILE;
     if (!LAND) {
       this.view = { x: 0, y: 80, k: 1 };
@@ -812,7 +813,7 @@ class PlayScene {
     if (!this.isBoss) { this.boss = null; return; }
     const B = this.lvl.boss;
     const hp = B.maxhp;
-    this.boss = { kind: B.kind, x: W / 2, y: 580, hp, maxhp: hp, dir: 1, state: 'idle', cd: 3.2, atk: null, windup: 0, open: 0, flash: 0, t: 0, phase: 0, frozen: 0, shown: 0, deathT: 0, ammoT: 5 };
+    this.boss = { kind: B.kind, x: W / 2, y: LAND ? this.rows * TILE - 78 : 580, hp, maxhp: hp, dir: 1, state: 'idle', cd: 3.2, atk: null, windup: 0, open: 0, flash: 0, t: 0, phase: 0, frozen: 0, shown: 0, deathT: 0, ammoT: 5 };
   }
   hurtBoss(dmg, how, freeze) {
     const b = this.boss; if (!b || b.state === 'dead') return;
@@ -851,7 +852,7 @@ class PlayScene {
     }
   }
   dropSupply() {
-    const cands = this.lanes.filter(l => l.type === 'safe' && l.row >= 1 && l.row <= 10);
+    const cands = this.lanes.filter(l => l.type === 'safe' && l.row >= 1 && l.row <= this.rows - 3);
     for (let tries = 0; tries < 10; tries++) {
       const l = pick(cands), c = randi(0, 8);
       if (l.blocks[c] !== undefined || l.items.some(i => i.col === c && !i.got)) continue;
@@ -878,9 +879,9 @@ class PlayScene {
       const kindS = this.world.strike;
       for (let i = 0; i < n; i++) {
         let col, row;
-        if (kindS === 'laser') { col = i === 0 ? colOf(f.x) : randi(0, 8); this.ents.push({ type: 'strike', kind: kindS, col, row: 12, x: cellX(col), warn: 1.1, t: 0, hit: false, hitT: 0 }); continue; }
+        if (kindS === 'laser') { col = i === 0 ? colOf(f.x) : randi(0, 8); this.ents.push({ type: 'strike', kind: kindS, col, row: this.rows - 1, x: cellX(col), warn: 1.1, t: 0, hit: false, hitT: 0 }); continue; }
         for (let tries = 0; tries < 14; tries++) {
-          row = randi(1, 10); col = (i === 0 && tries < 8) ? colOf(f.x) : randi(0, 8);
+          row = randi(1, this.rows - 3); col = (i === 0 && tries < 8) ? colOf(f.x) : randi(0, 8);
           const ln = this.lanes[row]; if (ln.type === 'water' || ln.blocks[col] !== undefined) continue;
           this.ents.push({ type: 'strike', kind: kindS, col, row, x: cellX(col), y: rowY(row), warn: 1.1, t: 0, hit: false, hitT: 0 }); break;
         }
@@ -889,11 +890,11 @@ class PlayScene {
     } else if (atk === 'summon') {
       const n = 1 + (ph >= 1 ? 1 : 0);
       for (let i = 0; i < n; i++) {
-        const safe = this.lanes.filter(l => l.type === 'safe' && l.row >= 1 && l.row <= 10);
+        const safe = this.lanes.filter(l => l.type === 'safe' && l.row >= 1 && l.row <= this.rows - 3);
         const l = pick(safe), left = Math.random() < .5, wk = pick(this.world.walker), sp = VEH[wk];
         this.ents.push({ type: 'minion', kind: wk, x: left ? -40 : W + 40, y: rowY(l.row), vx: (left ? 1 : -1) * (70 + ph * 20), hp: sp.hp, maxhp: sp.hp, t: 0 });
       }
-      if (this.world.flyer && ph >= 1) this.spawnFlyer(randi(2, 9));
+      if (this.world.flyer && ph >= 1) this.spawnFlyer(randi(2, Math.max(2, this.rows - 4)));
       SND.play('swoosh');
     }
   }

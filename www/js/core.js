@@ -3,7 +3,7 @@
    青蛙過河：蛙蛙大冒險  —  核心引擎
    作者：ArchieKUO
    ===================================================================== */
-const VERSION = 'v1.2.1';
+const VERSION = 'v1.2.2';
 const AUTHOR = '作者：ArchieKUO';
 const W = 450, TILE = 50, COLS = 9;               // W = 場地寬度（9 格 × 50），永遠不變
 /* 場地列數與上下邊界：由 PlayScene.layout() 依「橫式／直式」設定（直式 13 列、橫式 9 列、橫式魔王關 13 列縮放） */
@@ -37,6 +37,9 @@ function resize() {
   OX = (winW - SW * SC) / 2; OY = (winH - SH * SC) / 2;
   if ((wasLand !== LAND || ow !== SW || oh !== SH) && typeof Game !== 'undefined' && Game.onResize) Game.onResize();
 }
+/* 橫式一次顯示幾排：螢幕越寬，場地放得越大（排數越少），但左右至少留約 190 給操控區。
+   一般關與魔王關共用同一個排數，畫面絕不縮小（給長輩玩）。SW≥959 → 7 排（場地約佔 58%）、≥886 → 8 排、其餘 9 排 */
+function landRows() { return SW >= 959 ? 7 : SW >= 886 ? 8 : 9; }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 120));
 

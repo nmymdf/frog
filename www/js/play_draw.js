@@ -452,7 +452,7 @@ PlayScene.prototype.drawFieldTexts = function (c) {
   // 提示訊息
   if (this.banner && this.state !== 'lost') {
     const b = this.banner, k = b.t < .25 ? ease.outBack(b.t / .25) : b.t > 2.0 ? 1 - (b.t - 2) / .4 : 1;
-    c.save(); c.globalAlpha = clamp(k, 0, 1); c.translate(W / 2, 70 + (1 - clamp(k, 0, 1)) * -20); c.scale(.6 + .4 * clamp(k, 0, 1), .6 + .4 * clamp(k, 0, 1));
+    c.save(); c.globalAlpha = clamp(k, 0, 1); c.translate(W / 2, (this.isBoss ? FIELD_BOTTOM * .4 : 70) + (1 - clamp(k, 0, 1)) * -20); // 魔王關的橫幅放中間偏上，不蓋住魔王 c.scale(.6 + .4 * clamp(k, 0, 1), .6 + .4 * clamp(k, 0, 1));
     const w = Math.min(W - 16, Math.max(220, UI.measure(c, b.text, 24, 900) + 60)), h = b.sub ? 62 : 44;
     UI.glass(c, -w / 2, -h / 2, w, h, { r: 18, fill: 'rgba(8,16,28,.82)', border: b.col });
     UI.text(c, b.text, 0, b.sub ? -9 : 0, { size: 24, color: b.col, stroke: 'rgba(0,0,0,.7)', strokeW: 5, align: 'center', weight: 900, maxW: w - 24 });

@@ -248,7 +248,7 @@ function placeItems(lvl, R) {
 }
 
 /* ---------------------------------------------------------------- */
-/* 魔王關：固定 13 排的競技場，頂端兩排是魔王 */
+/* 魔王關：直式 13 排、橫式 7～9 排（跟一次顯示的排數一樣）的競技場，頂端兩排是魔王 */
 const ARENA = {
   toad: ['road', 'safe', 'water', 'water', 'safe', 'road', 'safe', 'road', 'safe'],
   robo: ['road', 'road', 'safe', 'rail', 'safe', 'road', 'safe', 'road', 'safe'],
@@ -263,7 +263,12 @@ function buildBossArena(lvl, R) {
   const lanes = lvl.lanes;
   const add = (type, extra) => { const l = newLane(type, lanes.length, extra); l.seed = Math.floor(R() * 1e6); lanes.push(l); return l; };
   add('safe', { start: true, gpos: 0, gsize: 2, group: 0 });
-  const pat = ARENA[world.boss];
+  let pat = ARENA[world.boss];
+  if (LAND) { // 橫式：魔王場的排數 = 一次顯示的排數（7～9），跟一般關一樣大、畫面不縮放（給長輩玩，字和按鈕都要夠大）
+    const n = landRows() - 4; // 扣掉起點、前庭、2 排魔王，剩 3～5 排障礙
+    const ns = pat.filter(t => t !== 'safe').slice(0, 4); while (ns.length < 4) ns.push('road');
+    pat = n >= 5 ? [ns[0], ns[1], 'safe', ns[2], ns[3]] : n === 4 ? [ns[0], ns[1], ns[2], ns[3]] : [ns[0], ns[1], ns[2]];
+  }
   let gid = 1;
   pat.forEach((type, i) => {
     const l = add(type, { group: gid++, gpos: 0, gsize: 1 });
