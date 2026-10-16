@@ -1,0 +1,32 @@
+plugins {
+    id 'com.android.application'
+}
+
+def appCodeVal = Integer.parseInt((project.findProperty('appCode') ?: '1').toString())
+def appVersionVal = (project.findProperty('appVersion') ?: '1.0').toString()
+
+android {
+    namespace 'com.archiekuo.frogcross'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.archiekuo.frogcross'
+        minSdk 24
+        targetSdk 34
+        versionCode appCodeVal
+        versionName appVersionVal
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // 遊戲本體（../www）由 tools/sync_assets.sh 或 GitHub Actions 複製到 src/main/assets/www
+}

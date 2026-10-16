@@ -1,0 +1,64 @@
+'use strict';
+/* =====================================================================
+   主程式：場景切換、遊戲迴圈
+   作者：ArchieKUO
+   ===================================================================== */
+const Game = {
+  scene: null, name: '', t: 0,
+  fade: 0, fadeDir: 0, pending: null,
+  factories: {
+    cover: () => new CoverScene(),
+    map: () => new MapScene(),
+    shop: from => new ShopScene(from),
+    play: id => new PlayScene(id),
+    result: r => new ResultScene(r),
+  },
+  start() {
+    Save.load();
+    this.setScene('cover');
+    let last = performance.now();
+    const loop = now => {
+      const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
+      try { this.update(dt); this.draw(); } catch (e) { this.fail(e); }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  },
+  fail(e) { if (!this.err) { this.err = e; console.error(e); } },
+  setScene(name, arg) { this.name = name; this.scene = this.factories[name](arg); UI.hits.length = 0; UI.prev = []; UI.down = null; UI.clickId = null; UI.cur = null; },
+  go(name, arg) {
+    if (this.pending) return;
+    this.pending = { name, arg }; this.fadeDir = 1;
+  },
+  update(dt) {
+    this.t += dt;
+    if (this.fadeDir === 1) {
+      this.fade = Math.min(1, this.fade + dt / .16);
+      if (this.fade >= 1) { const p = this.pending; this.pending = null; this.setScene(p.name, p.arg); this.fadeDir = -1; }
+    } else if (this.fadeDir === -1) {
+      this.fade = Math.max(0, this.fade - dt / .22);
+      if (this.fade <= 0) this.fadeDir = 0;
+    }
+    if (this.scene) this.scene.update(dt);
+  },
+  draw() {
+    const g = ctx;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#06110b'; g.fillRect(0, 0, canvas.width, canvas.height);
+    g.setTransform(SC * DPR, 0, 0, SC * DPR, OX * DPR, OY * DPR);
+    g.save(); g.beginPath(); g.rect(0, 0, W, H); g.clip();
+    if (this.scene) this.scene.draw(g);
+    if (this.fade > 0) { g.fillStyle = `rgba(6,17,11,${this.fade})`; g.fillRect(0, 0, W, H); }
+    g.restore();
+  },
+  live() { return this.scene && this.fadeDir !== 1; },
+  onDown(x, y, id) { if (this.live() && this.scene.onDown) this.scene.onDown(x, y, id); },
+  onMove(x, y, id) { if (this.live() && this.scene.onMove) this.scene.onMove(x, y, id); },
+  onUp(x, y, id) { if (this.scene && this.scene.onUp) this.scene.onUp(x, y, id); },
+  onKey(k, e) { if (this.live() && this.scene.onKey) this.scene.onKey(k, e); },
+  onKeyUp(k) { if (this.scene && this.scene.onKeyUp) this.scene.onKeyUp(k); },
+  onBlur() { if (this.scene && this.scene.onBlur) this.scene.onBlur(); },
+  onBack() { return this.live() && this.scene.onBack ? !!this.scene.onBack() : false; },
+  onWheel() { },
+};
+Game.start();
