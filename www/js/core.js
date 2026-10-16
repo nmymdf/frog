@@ -12,10 +12,10 @@ const PI = Math.PI, TAU = Math.PI * 2;
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-let DPR = 1, SC = 1, OX = 0, OY = 0, winW = 0, winH = 0;
+let DPR = 1, SC = 1, OX = 0, OY = 0, winW = 0, winH = 0, QUAL = 1; // QUAL：畫質係數，太卡時由 main.js 自動調低
 
 function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  DPR = Math.max(1, Math.min(window.devicePixelRatio || 1, 2) * QUAL);
   winW = window.innerWidth; winH = window.innerHeight;
   canvas.width = Math.round(winW * DPR);
   canvas.height = Math.round(winH * DPR);

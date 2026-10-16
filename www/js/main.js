@@ -16,9 +16,11 @@ const Game = {
   start() {
     Save.load();
     this.setScene('cover');
-    let last = performance.now();
+    let last = performance.now(), accT = 0, accN = 0;
     const loop = now => {
-      const dt = Math.min(.05, Math.max(0, (now - last) / 1000)); last = now;
+      const raw = Math.max(0, now - last), dt = Math.min(.05, raw / 1000); last = now;
+      // 自動畫質：連續 60 幀平均超過 29ms（低於約 34fps）就降低解析度，最低降到 1 倍
+      if (raw > 0 && raw < 120 && this.name !== 'cover') { accT += raw; accN++; if (accN >= 60) { if (accT / accN > 29 && QUAL > .5) { QUAL = Math.max(.5, QUAL - .25); resize(); } accT = 0; accN = 0; } }
       try { this.update(dt); this.draw(); } catch (e) { this.fail(e); }
       requestAnimationFrame(loop);
     };
