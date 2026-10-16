@@ -10,7 +10,7 @@ Frogger 風格的 HTML5 Canvas 小遊戲,給爸爸(含長輩)玩。6 個世界 �
 ## 分工
 - Android:爸爸與他的 Claude,本 repo `main` 分支。
 - 網頁版:GitHub Pages(https://nmymdf.github.io/frog/),iPhone 用 Safari「加入主畫面」可全螢幕玩。
-- **iPhone 原生版:不需要**(爸爸要做時才改成「需要」,並照 READFIRST 的 `iPhone交接.md` 準備文件)。
+- **iPhone 版:需要**(爸爸說要做)。由 Jay 在 `jaykuo0619/frog` 的 `ios` 分支、`ios/` 資料夾做:WKWebView 載入 `www/`,照 `docs/IOS_PORT.md` 與 `docs/IOS_TODO.md`。這邊的 Claude 不寫 iOS 程式、不動 `ios/`。
 - Windows 版:規劃中,還沒開始。
 
 ## 這個 App 的特別規則(爸爸說過的)
@@ -24,8 +24,13 @@ Frogger 風格的 HTML5 Canvas 小遊戲,給爸爸(含長輩)玩。6 個世界 �
 ## 文件地圖
 - `README.md`:版本說明、畫面方向、網頁版、取得 APK
 - `www/`:遊戲本體(純 HTML/JS,無套件);`www/js/core.js` 的 `VERSION` 是版本唯一來源
-- `android/`:Android 外殼(WebView);`tools/`:工具腳本
+- `android/`:Android 外殼(WebView);`tools/`:工具腳本(`make_icon.py` 產生 iPhone 1024 圖示到 `ios-assets/`)
+- `docs/IOS_PORT.md`(iPhone 規格)、`docs/IOS_TODO.md`(待辦勾選清單)、`docs/iPhone版_給家人的步驟.md`(Jay 的操作步驟)
 - `.github/workflows/build.yml`:打包 APK 放到 `apk` 分支;`pages.yml`:網頁版放到 `gh-pages`
+
+## 每次改版要做的事
+- 有使用者看得到的改動:同步更新 `docs/IOS_PORT.md` 與 `docs/IOS_TODO.md`(表格加一行:版本、項目、規格段落、Android 參考),一起 push;回報爸爸時說「iPhone 要跟著改的已寫進 IOS_TODO.md」。
+- 圖示有改:重新執行 `python3 tools/make_icon.py`。
 
 ## 常用指令
 - 換版本:`tools/bump_version.sh 1.2.6`(改 `VERSION`、圖示與設定檔檔名、引用),再改 README 版本說明
@@ -34,7 +39,7 @@ Frogger 風格的 HTML5 Canvas 小遊戲,給爸爸(含長輩)玩。6 個世界 �
 - 下載:`https://github.com/nmymdf/frog/raw/apk/FrogCross-vX.Y.Z.apk`(前後換行)
 
 ## 目前狀態(每次改版更新)
-- Android v1.2.5;網頁版同版;iPhone 原生:不需要
+- Android v1.2.5;網頁版同版;iPhone:規格與交接文件已備好(v1.2.5),等 Jay 開始做
 - **待決定:簽章金鑰。** 目前的金鑰檔放在 repo(`android/frogcross.keystore`)且 repo 是公開的,
   不符合 READFIRST「金鑰不能 commit」。要改成放在雲端機密環境變數/GitHub Secrets,
   換新金鑰會讓已安裝的人再移除重裝一次。
