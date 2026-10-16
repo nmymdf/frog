@@ -17,6 +17,16 @@ android {
         versionName appVersionVal
     }
 
+    // 固定簽章：每次打包都用同一把金鑰，手機才能直接覆蓋安裝（不用移除、存檔不會不見）
+    signingConfigs {
+        debug {
+            storeFile file('../frogcross.keystore')
+            storePassword 'frogcross'
+            keyAlias 'frogcross'
+            keyPassword 'frogcross'
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
