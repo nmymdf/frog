@@ -57,11 +57,13 @@ CoverScene.prototype.drawL = function (c) {
     const k = (t * .8 + m.ph) % 4, hop = k < .5 ? Math.sin(k / .5 * PI) : 0;
     FrogArt.front(c, m.x, m.y + 16, { s: .68, t, skin: m.skin, hat: m.hat, hop, z: hop * 22, mood: 'happy', blink: 0, sy: 1 + Math.sin(t * 2 + m.ph) * .02, look: [Math.sin(t + m.ph), 0] });
   }
-  // 主角
+  // 作者署名（v1.2.1：放大，放在標題緞帶正下方；畫在青蛙後面，青蛙跳起來會從字前面過）
+  credit(c, lx, 238, { size: 26, stroke: 'rgba(0,0,0,.7)', strokeW: 6 });
+  // 主角（v1.2.1：往下挪 10、跳高收到 36，讓跳起來也碰不到上面的作者字樣）
   const h = this.hop, hk = h.k < 1 ? Math.sin(h.k * PI) : 0;
-  this.lily(c, lx, 402, 86, true);
-  FrogArt.front(c, lx, 386, {
-    s: 1.4, t, skin: Save.d.skin, hat: Save.d.hat, hop: hk, z: hk * 56,
+  this.lily(c, lx, 412, 86, true);
+  FrogArt.front(c, lx, 396, {
+    s: 1.4, t, skin: Save.d.skin, hat: Save.d.hat, hop: hk, z: hk * 36,
     sx: 1 - hk * .05 + Math.sin(t * 2) * .012, sy: 1 + hk * .07 + Math.sin(t * 2 + 1) * .02, mood: 'happy', blink: this.blinkT < 0 ? 1 : 0, look: [Math.sin(t * .8) * .7, 0],
   });
   Weather.draw(c, t);
@@ -105,8 +107,7 @@ CoverScene.prototype.drawL = function (c) {
   wallet(c, 10, 10);
   UI.roundIcon(c, 'c_snd', SW - 70, 24, 17, (cc, x, y, s) => Icons.speaker(cc, x, y, s, Save.d.sound), { style: Save.d.sound ? 'teal' : 'dark' });
   UI.roundIcon(c, 'c_mus', SW - 26, 24, 17, (cc, x, y, s) => Icons.note(cc, x, y, s, Save.d.music), { style: Save.d.music ? 'purple' : 'dark' });
-  credit(c, cx, 426, { size: 15 });
-  UI.text(c, '把青蛙平安送到對岸吧!', cx, 443, { size: 11,  color: 'rgba(255,255,255,.85)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
+  UI.text(c, '把青蛙平安送到對岸吧!', cx, 434, { size: 12,  color: 'rgba(255,255,255,.85)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
   SettingsPanel.draw(c);
 };
 

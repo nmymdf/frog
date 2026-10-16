@@ -5,7 +5,7 @@
 
 /* ---------- 共用小工具 ---------- */
 function credit(c, x, y, o = {}) { // 作者署名：金色斜體 + 版本
-  UI.text(c, AUTHOR + '  ' + VERSION, x, y, { size: o.size || 13, color: o.color || '#ffd24a', stroke: o.stroke === undefined ? 'rgba(0,0,0,.55)' : o.stroke, strokeW: 3.5, italic: true, align: o.align || 'center', weight: 800 });
+  UI.text(c, AUTHOR + '  ' + VERSION, x, y, { size: o.size || 13, color: o.color || '#ffd24a', stroke: o.stroke === undefined ? 'rgba(0,0,0,.55)' : o.stroke, strokeW: o.strokeW || 3.5, italic: true, align: o.align || 'center', weight: 800 });
 }
 function checkMark(c, x, y, s, ok) {
   c.save();
@@ -203,11 +203,13 @@ class CoverScene {
       const k = (t * .8 + m.ph) % 4, hop = k < .5 ? Math.sin(k / .5 * PI) : 0;
       FrogArt.front(c, m.x, m.y + 20, { s: .72, t, skin: m.skin, hat: m.hat, hop, z: hop * 26, mood: 'happy', blink: 0, sy: 1 + Math.sin(t * 2 + m.ph) * .02, look: [Math.sin(t + m.ph), 0] });
     }
+    // 作者署名（v1.2.1：放大，放在標題緞帶正下方；畫在青蛙後面，青蛙跳起來會從字前面過）
+    credit(c, 225, 264, { size: 30, stroke: 'rgba(0,0,0,.7)', strokeW: 6 });
     // 主角
     const h = this.hop, hk = h.k < 1 ? Math.sin(h.k * PI) : 0;
-    this.lily(c, 225, 432, 96, true);
-    FrogArt.front(c, 225, 427, {
-      s: 1.65, t, skin: Save.d.skin, hat: Save.d.hat, hop: hk, z: hk * 80,
+    this.lily(c, 225, 446, 96, true); // v1.2.1：主角往下挪 14，讓跳起來碰不到作者字樣
+    FrogArt.front(c, 225, 441, {
+      s: 1.65, t, skin: Save.d.skin, hat: Save.d.hat, hop: hk, z: hk * 30,
       sx: 1 - hk * .05 + Math.sin(t * 2) * .012, sy: 1 + hk * .07 + Math.sin(t * 2 + 1) * .02, mood: 'happy', blink: this.blinkT < 0 ? 1 : 0, look: [Math.sin(t * .8) * .7, 0],
     });
     Weather.draw(c, t);
@@ -250,8 +252,7 @@ class CoverScene {
     wallet(c, 10, 10);
     UI.roundIcon(c, 'c_snd', 372, 24, 17, (cc, x, y, s) => Icons.speaker(cc, x, y, s, Save.d.sound), { style: Save.d.sound ? 'teal' : 'dark' });
     UI.roundIcon(c, 'c_mus', 416, 24, 17, (cc, x, y, s) => Icons.note(cc, x, y, s, Save.d.music), { style: Save.d.music ? 'purple' : 'dark' });
-    credit(c, 225, 880, { size: 16 });
-    UI.text(c, '把青蛙平安送到對岸吧!', 225, 902, { size: 12, color: 'rgba(255,255,255,.8)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
+    UI.text(c, '把青蛙平安送到對岸吧!', 225, 896, { size: 12, color: 'rgba(255,255,255,.8)', stroke: 'rgba(0,30,60,.6)', strokeW: 3, align: 'center', weight: 700 });
     SettingsPanel.draw(c);
   }
 }
