@@ -1,6 +1,6 @@
 # 青蛙過河 · 超級蛙蛙大冒險
 
-作者：*ArchieKUO*　版本：v1.0
+作者：*ArchieKUO*　版本：v1.2
 
 HTML5 Canvas 做的青蛙過河（Frogger）冒險遊戲，全部畫面都用程式畫出來、音效與音樂用 WebAudio 合成，不需要任何圖片或音檔。
 
@@ -11,8 +11,14 @@ HTML5 Canvas 做的青蛙過河（Frogger）冒險遊戲，全部畫面都用程
 - **6 種武器**：泡泡槍、火球砲、冰凍光線、閃電鞭、迴旋鏢、散彈泡泡（從補給箱撿）
 - **商店**：5 種升級、9 種青蛙造型、12 頂帽子
 
+## 畫面方向（v1.2 起以橫式為主）
+- **橫式（預設）**：場地在中間，左邊方向鍵、右邊武器與發射鈕，一般關顯示 9 列、魔王關整場縮放顯示
+- **直式**：原本的直立版面，一樣可以玩（設定 → 畫面方向 → 直式）
+- **自動**：跟著手機轉；選關地圖、商店、結算、設定等所有畫面兩種方向都有各自排好的版面
+- 設定會記住；APK 用 `AndroidBridge.setOrientation` 通知外殼旋轉，網頁版則依視窗比例自動換版面
+
 ## 操作
-- 手機：在畫面上滑動 / 點一下往前跳，或用左下方向鍵；右下按鈕發射武器
+- 手機：在畫面上滑動 / 點一下往前跳，或用方向鍵；發射鈕發射武器
 - 電腦鍵盤：方向鍵或 WASD 移動，空白鍵發射，Esc 暫停
 
 ## 取得 Android APK
@@ -24,7 +30,7 @@ HTML5 Canvas 做的青蛙過河（Frogger）冒險遊戲，全部畫面都用程
 www/                 遊戲本體（index.html + js/）
 android/             Android WebView 外殼（Gradle 專案）
 tools/sync_assets.sh 把 www 複製進 Android assets
-tools/smoke_test.py  用 headless Chromium 跑完 48 關的煙霧測試
+tools/smoke_test.py  用 headless Chromium 在橫式與直式各跑完 48 關的煙霧測試
 .github/workflows/   自動編譯 APK 並推到 apk 分支
 ```
 

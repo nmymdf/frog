@@ -3,28 +3,42 @@
    青蛙過河：蛙蛙大冒險  —  核心引擎
    作者：ArchieKUO
    ===================================================================== */
-const VERSION = 'v1.0';
+const VERSION = 'v1.2';
 const AUTHOR = '作者：ArchieKUO';
-const W = 450, H = 920, TILE = 50, COLS = 9;
-const FIELD_ROWS = 13, FIELD_TOP = 80, FIELD_BOTTOM = FIELD_TOP + FIELD_ROWS * TILE; // 730
+const W = 450, TILE = 50, COLS = 9;               // W = 場地寬度（9 格 × 50），永遠不變
+/* 場地列數與上下邊界：由 PlayScene.layout() 依「橫式／直式」設定（直式 13 列、橫式 9 列、橫式魔王關 13 列縮放） */
+let FIELD_ROWS = 13, FIELD_TOP = 80, FIELD_BOTTOM = FIELD_TOP + FIELD_ROWS * TILE; // 直式預設 730
 const FONT = "'Noto Sans TC','Noto Sans CJK TC','Microsoft JhengHei','PingFang TC','Heiti TC',system-ui,sans-serif";
 const PI = Math.PI, TAU = Math.PI * 2;
 
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let DPR = 1, SC = 1, OX = 0, OY = 0, winW = 0, winH = 0, QUAL = 1; // QUAL：畫質係數，太卡時由 main.js 自動調低
+/* 畫面邏輯尺寸：直式 450×920；橫式高 450、寬依螢幕比例 800~1050（選單與 HUD 用 SW/SH，場地仍是 W=450 寬） */
+let SW = 450, SH = 920, LAND = false;
 
+/* 畫面方向設定：'land' 橫式／'port' 直式／'auto' 跟著手機轉。APK 預設橫式，網頁預設自動 */
+function orientMode() {
+  const m = (typeof Save !== 'undefined' && Save.d && Save.d.orient) || '';
+  if (m === 'land' || m === 'port' || m === 'auto') return m;
+  return window.AndroidBridge ? 'land' : 'auto';
+}
 function resize() {
   DPR = Math.max(1, Math.min(window.devicePixelRatio || 1, 2) * QUAL);
   winW = window.innerWidth; winH = window.innerHeight;
   canvas.width = Math.round(winW * DPR);
   canvas.height = Math.round(winH * DPR);
-  SC = Math.min(winW / W, winH / H);
-  OX = (winW - W * SC) / 2; OY = (winH - H * SC) / 2;
+  const m = orientMode();
+  const wasLand = LAND, ow = SW, oh = SH;
+  LAND = m === 'land' || (m === 'auto' && winW > winH);
+  if (LAND) { SH = 450; SW = clamp(Math.round(450 * winW / Math.max(1, winH)), 800, 1050); }
+  else { SW = 450; SH = 920; }
+  SC = Math.min(winW / SW, winH / SH);
+  OX = (winW - SW * SC) / 2; OY = (winH - SH * SC) / 2;
+  if ((wasLand !== LAND || ow !== SW || oh !== SH) && typeof Game !== 'undefined' && Game.onResize) Game.onResize();
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 120));
-resize();
 
 /* ---------- 小工具 ---------- */
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
@@ -76,6 +90,7 @@ const Save = {
       up: { hearts: 0, magnet: 0, power: 0, ammo: 0, luck: 0 },
       skins: ['green'], hats: ['none'], skin: 'green', hat: 'none',
       sound: true, music: true, vib: true, dpad: true,
+      orient: window.AndroidBridge ? 'land' : 'auto', // 畫面方向：land 橫式／port 直式／auto 自動
       played: 0, totalCoins: 0, kills: 0, hops: 0, seenTut: false,
       weaponsSeen: [], mutsSeen: [], bossKills: 0,
       lastLevel: 0, world: 0, // 上次玩到哪一關、地圖停在哪個世界（下次接續）
@@ -261,3 +276,5 @@ function poly(c, pts, fill, stroke, lw) {
 function shadowEll(c, x, y, rx, ry, a = .28) {
   c.save(); c.fillStyle = `rgba(0,0,0,${a})`; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, TAU); c.fill(); c.restore();
 }
+
+resize();

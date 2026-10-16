@@ -421,11 +421,12 @@ const Props = {
    天氣 / 空氣粒子（螢幕座標）
    ===================================================================== */
 const Weather = {
-  parts: [], kind: '',
-  init(kind) {
-    this.kind = kind; this.parts = [];
+  parts: [], kind: '', x1: W, y0: 0, y1: 650,
+  /* 範圍預設是場地；封面等畫面可以傳入自己的範圍 (寬, 上, 下) */
+  init(kind, x1 = W, y0 = FIELD_TOP, y1 = FIELD_BOTTOM) {
+    this.kind = kind; this.parts = []; this.x1 = x1; this.y0 = y0; this.y1 = y1;
     const n = { pollen: 30, rain: 90, snow: 80, embers: 50, stars: 30, sprinkles: 46 }[kind] || 0;
-    for (let i = 0; i < n; i++) this.parts.push({ x: rand(0, W), y: rand(FIELD_TOP, FIELD_BOTTOM), p: rand(0, 9), s: rand(.6, 1.4), c: i });
+    for (let i = 0; i < n; i++) this.parts.push({ x: rand(0, x1), y: rand(y0, y1), p: rand(0, 9), s: rand(.6, 1.4), c: i });
   },
   update(dt, scrollDy = 0) {
     for (const p of this.parts) {
@@ -438,13 +439,13 @@ const Weather = {
         case 'sprinkles': p.x += Math.sin(p.p + performance.now() / 800) * 12 * dt; p.y += 38 * p.s * dt; p.p += dt; break;
       }
       p.y += scrollDy;
-      if (p.y > FIELD_BOTTOM + 10) { p.y = FIELD_TOP - 10; p.x = rand(0, W); }
-      if (p.y < FIELD_TOP - 14) { p.y = FIELD_BOTTOM + 8; p.x = rand(0, W); }
-      if (p.x < -10) p.x = W + 8; if (p.x > W + 10) p.x = -8;
+      if (p.y > this.y1 + 10) { p.y = this.y0 - 10; p.x = rand(0, this.x1); }
+      if (p.y < this.y0 - 14) { p.y = this.y1 + 8; p.x = rand(0, this.x1); }
+      if (p.x < -10) p.x = this.x1 + 8; if (p.x > this.x1 + 10) p.x = -8;
     }
   },
   draw(c, t) {
-    c.save(); c.beginPath(); c.rect(0, FIELD_TOP, W, FIELD_BOTTOM - FIELD_TOP); c.clip();
+    c.save(); c.beginPath(); c.rect(0, this.y0, this.x1, this.y1 - this.y0); c.clip();
     switch (this.kind) {
       case 'pollen': for (const p of this.parts) { c.globalAlpha = .5 + Math.sin(t * 2 + p.p) * .3; circ(c, p.x, p.y, 2 * p.s, '#fff7b0'); } break;
       case 'rain': c.strokeStyle = 'rgba(190,220,255,.5)'; c.lineWidth = 1.2; c.beginPath(); for (const p of this.parts) { c.moveTo(p.x, p.y); c.lineTo(p.x + 4, p.y - 14); } c.stroke(); break;

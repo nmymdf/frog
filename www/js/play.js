@@ -9,9 +9,6 @@ const colOf = x => clamp(Math.round((x - 25) / TILE), 0, COLS - 1);
 const cellX = c => c * TILE + TILE / 2;
 const rowY = r => r * TILE + TILE / 2;
 
-/* 控制區位置 */
-const PAD = { cx: 92, cy: 836, off: 50, r: 30 };
-const FIRE = { cx: 366, cy: 836, r: 54 };
 
 class PlayScene {
   constructor(id, opts = {}) {
@@ -42,16 +39,45 @@ class PlayScene {
     // 起點選一個沒被擋住的格子
     let c0 = 4; const l0 = this.lanes[0]; if (l0.blocks[c0] !== undefined) { for (let d = 1; d < 5; d++) { if (l0.blocks[4 + d] === undefined) { c0 = 4 + d; break; } if (l0.blocks[4 - d] === undefined) { c0 = 4 - d; break; } } }
     this.f.x = cellX(c0);
-    Weather.init(this.world.weather);
+    this.layout();
     FX.clear();
     SND.music(this.isBoss ? 'boss' : this.world.music);
-    this.bg = Panels.worldStrip(this.wi);
-    this.panel = Panels.controls(this.wi);
     this.initBoss();
     this.dispCoins = Save.d.coins;
   }
 
-  /* ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------
+     版面：場地一律畫在「虛擬場地座標」(寬 450、高 FIELD_ROWS×50) 裡，再用 view 平移＋縮放放到螢幕上
+       直式：13 列、k=1，場地在上方 80px 下面；方向鍵／發射鈕在下方控制區
+       橫式：一般關 9 列（k=1）、魔王關 13 列整場縮小（k=SH/650）；場地置中，左右是側邊面板
+     ------------------------------------------------------------------ */
+  layout() {
+    const key = (LAND ? 'L' : 'P') + SW + 'x' + SH;
+    if (this.lkey === key) return;
+    this.lkey = key;
+    const rows = LAND ? (this.isBoss ? 13 : 9) : 13;
+    FIELD_ROWS = rows; FIELD_TOP = 0; FIELD_BOTTOM = rows * TILE;
+    if (!LAND) {
+      this.view = { x: 0, y: 80, k: 1 };
+      this.dpad = { cx: 92, cy: 836, off: 50, r: 30 };
+      this.fbtn = { cx: 366, cy: 836, r: 54 };
+      this.sideW = 0;
+    } else {
+      const k = SH / (rows * TILE), x0 = (SW - W * k) / 2;
+      this.view = { x: x0, y: 0, k };
+      this.sideW = x0; // 左右側邊面板寬度（800 寬螢幕時最少 175）
+      const ps = clamp(x0 / 175, 1, 1.3); // 側邊面板越寬，按鈕越大
+      const off = 46 * ps, r = 28 * ps, fr = 50 * ps;
+      this.dpad = { cx: x0 / 2, cy: SH - 22 - off - r, off, r };
+      this.fbtn = { cx: SW - x0 / 2, cy: SH - 30 - fr, r: fr };
+    }
+    Weather.init(this.world.weather);
+  }
+  onResize() { this.layout(); }
+  /* 螢幕座標 → 場地座標 */
+  toField(x, y) { const v = this.view; return { x: (x - v.x) / v.k, y: (y - v.y) / v.k }; }
+  inField(x, y) { const v = this.view; return x >= v.x && x <= v.x + W * v.k && y >= v.y && y <= v.y + FIELD_BOTTOM * v.k; }
+
   get lane() { return this.lanes[this.f.row]; }
   sy(wy) { return FIELD_BOTTOM - (wy - this.camY); }
   fy() { return this.f.wy; }
@@ -67,12 +93,13 @@ class PlayScene {
     // 方向鍵
     if (Save.d.dpad) {
       for (let d = 0; d < 4; d++) {
-        const px = PAD.cx + (d === 1 ? PAD.off : d === 3 ? -PAD.off : 0), py = PAD.cy + (d === 0 ? -PAD.off : d === 2 ? PAD.off : 0);
+        const PAD = this.dpad, px = PAD.cx + (d === 1 ? PAD.off : d === 3 ? -PAD.off : 0), py = PAD.cy + (d === 0 ? -PAD.off : d === 2 ? PAD.off : 0);
         if (Math.hypot(x - px, y - py) < PAD.r + 10) { this.ptrs.set(id, { role: 'dpad', dir: d }); this.hold = d; this.holdT = .22; this.tryHop(d); return; }
       }
     }
+    const FIRE = this.fbtn;
     if (Math.hypot(x - FIRE.cx, y - FIRE.cy) < FIRE.r + 12) { this.ptrs.set(id, { role: 'fire' }); this.fire(); return; }
-    if (y > FIELD_TOP && y < FIELD_BOTTOM) this.ptrs.set(id, { role: 'field', sx: x, sy: y, t: performance.now(), fired: false });
+    if (LAND || this.inField(x, y)) this.ptrs.set(id, { role: 'field', sx: x, sy: y, t: performance.now(), fired: false });
   }
   onMove(x, y, id) {
     UI.pointerMove(x, y);
@@ -87,7 +114,7 @@ class PlayScene {
     const p = this.ptrs.get(id);
     if (p) {
       if (p.role === 'dpad') this.hold = null;
-      if (p.role === 'field' && !p.fired && this.state === 'play' && performance.now() - p.t < 380 && Math.hypot(x - p.sx, y - p.sy) < 22) this.tryHop(0);
+      if (p.role === 'field' && !p.fired && this.state === 'play' && performance.now() - p.t < 380 && Math.hypot(x - p.sx, y - p.sy) < 22 && this.inField(p.sx, p.sy)) this.tryHop(0); // 橫式時側邊面板可以滑動，但只點一下不會跳（避免點歪按鍵就往前衝）
     }
     this.ptrs.delete(id);
   }
@@ -403,6 +430,7 @@ class PlayScene {
   /* ------------------------------------------------------------------ */
   update(dt) {
     UI.frame(dt);
+    this.layout();
     this.t += dt;
     FX.update(dt);
     if (this.hurtFlash) this.hurtFlash = Math.max(0, this.hurtFlash - dt * 2);
@@ -619,7 +647,7 @@ class PlayScene {
     this.ents = this.ents.filter(e => !e.remove);
     this.updateProjs(dt);
   }
-  visRows() { return [Math.max(0, Math.floor(this.camRow) + 1), Math.min(this.rows - 2, Math.floor(this.camRow) + 11)]; }
+  visRows() { return [Math.max(0, Math.floor(this.camRow) + 1), Math.min(this.rows - 2, Math.floor(this.camRow) + FIELD_ROWS - 2)]; }
   spawnFlyer(rowPref) {
     const [a, b] = this.visRows();
     let r = rowPref !== undefined ? rowPref : clamp(this.f.row + randi(-2, 4), a, b);
@@ -637,7 +665,7 @@ class PlayScene {
     const [a, b] = this.visRows();
     for (let i = 0; i < n; i++) {
       let col, row;
-      if (kind === 'laser') { col = i === 0 ? colOf(this.f.x) + randi(-1, 1) : randi(0, 8); col = clamp(col, 0, 8); row = this.rows; this.ents.push({ type: 'strike', kind, col, row: Math.floor(this.camRow) + 12, x: cellX(col), warn: 1.2, t: 0, hit: false, hitT: 0 }); SND.play('warn'); continue; }
+      if (kind === 'laser') { col = i === 0 ? colOf(this.f.x) + randi(-1, 1) : randi(0, 8); col = clamp(col, 0, 8); row = this.rows; this.ents.push({ type: 'strike', kind, col, row: Math.floor(this.camRow) + FIELD_ROWS - 1, x: cellX(col), warn: 1.2, t: 0, hit: false, hitT: 0 }); SND.play('warn'); continue; }
       for (let tries = 0; tries < 12; tries++) {
         row = clamp(this.f.row + randi(-1, 3), a, b); col = i === 0 && Math.random() < .7 ? colOf(this.f.x) + randi(-1, 1) : randi(0, 8); col = clamp(col, 0, 8);
         const ln = this.lanes[row]; if (ln.type === 'water' || ln.blocks[col] !== undefined || ln.type === 'goal' || ln.type === 'bossfloor') continue;
@@ -772,7 +800,7 @@ class PlayScene {
   /* ---------- 攝影機 ---------- */
   updateCam(dt, snap) {
     const maxCam = Math.max(0, this.rows - FIELD_ROWS);
-    const target = clamp(this.f.row - 3.2, 0, maxCam);
+    const target = clamp(this.f.row - (FIELD_ROWS >= 13 ? 3.2 : 2.4), 0, maxCam);
     if (this.camRow < target) this.camRow += (target - this.camRow) * Math.min(1, dt * 7);
     if (snap) this.camRow = Math.max(this.camRow, 0);
     this.camRow = clamp(this.camRow, 0, maxCam);
@@ -784,7 +812,7 @@ class PlayScene {
     if (!this.isBoss) { this.boss = null; return; }
     const B = this.lvl.boss;
     const hp = B.maxhp;
-    this.boss = { kind: B.kind, x: W / 2, y: 592, hp, maxhp: hp, dir: 1, state: 'idle', cd: 3.2, atk: null, windup: 0, open: 0, flash: 0, t: 0, phase: 0, frozen: 0, shown: 0, deathT: 0, ammoT: 5 };
+    this.boss = { kind: B.kind, x: W / 2, y: 580, hp, maxhp: hp, dir: 1, state: 'idle', cd: 3.2, atk: null, windup: 0, open: 0, flash: 0, t: 0, phase: 0, frozen: 0, shown: 0, deathT: 0, ammoT: 5 };
   }
   hurtBoss(dmg, how, freeze) {
     const b = this.boss; if (!b || b.state === 'dead') return;

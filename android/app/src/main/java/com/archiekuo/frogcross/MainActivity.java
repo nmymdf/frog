@@ -2,6 +2,9 @@ package com.archiekuo.frogcross;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,15 +22,27 @@ import android.webkit.WebViewClient;
 
 /**
  * 青蛙過河 — 作者：ArchieKUO
- * 用 WebView 載入 assets/www/index.html（HTML5 Canvas 遊戲），全螢幕、直向。
+ * 用 WebView 載入 assets/www/index.html（HTML5 Canvas 遊戲），全螢幕。
+ * 畫面方向：橫式（預設）／直式／自動，由遊戲設定頁選擇，經 AndroidBridge.setOrientation 通知這裡並記住。
  */
 public class MainActivity extends Activity {
     private WebView web;
+    private static final String PREFS = "frogcross";
+
+    /** 依設定值旋轉畫面：land 橫式、port 直式、auto 跟著手機（尊重系統的旋轉鎖定） */
+    private void applyOrientation(String mode) {
+        int o;
+        if ("port".equals(mode)) o = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
+        else if ("auto".equals(mode)) o = ActivityInfo.SCREEN_ORIENTATION_USER;
+        else o = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
+        setRequestedOrientation(o);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        applyOrientation(getSharedPreferences(PREFS, MODE_PRIVATE).getString("orient", "land")); // 先轉好方向再載入畫面，避免閃一下
         if (Build.VERSION.SDK_INT >= 28) {
             WindowManager.LayoutParams lp = getWindow().getAttributes();
             lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
@@ -81,6 +96,12 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig); // 轉向時不重建 Activity，只重新隱藏系統列；遊戲自己會依視窗大小重排版面
+        hideSystemUi();
+    }
+
+    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) hideSystemUi();
@@ -116,8 +137,15 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    /** JS 端用 AndroidBridge.vibrate(ms) 震動 */
+    /** JS 端用 AndroidBridge.vibrate(ms) 震動、AndroidBridge.setOrientation(mode) 切換畫面方向 */
     private class Bridge {
+        @JavascriptInterface
+        public void setOrientation(final String mode) {
+            final String m = ("port".equals(mode) || "auto".equals(mode)) ? mode : "land";
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("orient", m).apply();
+            runOnUiThread(() -> applyOrientation(m));
+        }
+
         @JavascriptInterface
         public void vibrate(int ms) {
             try {

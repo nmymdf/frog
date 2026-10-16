@@ -15,6 +15,8 @@ const Game = {
   },
   start() {
     Save.load();
+    resize(); // 讀完存檔才知道畫面方向設定（橫式／直式／自動）
+    try { if (window.AndroidBridge && AndroidBridge.setOrientation) AndroidBridge.setOrientation(orientMode()); } catch (e) { } // 讓手機外殼的方向跟存檔一致
     this.setScene('cover');
     let last = performance.now(), accT = 0, accN = 0;
     const loop = now => {
@@ -48,11 +50,13 @@ const Game = {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = '#06110b'; g.fillRect(0, 0, canvas.width, canvas.height);
     g.setTransform(SC * DPR, 0, 0, SC * DPR, OX * DPR, OY * DPR);
-    g.save(); g.beginPath(); g.rect(0, 0, W, H); g.clip();
+    g.save(); g.beginPath(); g.rect(0, 0, SW, SH); g.clip();
     if (this.scene) this.scene.draw(g);
-    if (this.fade > 0) { g.fillStyle = `rgba(6,17,11,${this.fade})`; g.fillRect(0, 0, W, H); }
+    if (this.fade > 0) { g.fillStyle = `rgba(6,17,11,${this.fade})`; g.fillRect(0, 0, SW, SH); }
     g.restore();
   },
+  /* 視窗大小或畫面方向改變：場景自己重新排版 */
+  onResize() { UI.hits.length = 0; UI.prev = []; UI.down = null; if (this.scene && this.scene.onResize) this.scene.onResize(); },
   live() { return this.scene && this.fadeDir !== 1; },
   onDown(x, y, id) { if (this.live() && this.scene.onDown) this.scene.onDown(x, y, id); },
   onMove(x, y, id) { if (this.live() && this.scene.onMove) this.scene.onMove(x, y, id); },

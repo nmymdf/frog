@@ -5,7 +5,7 @@
 
 /* ---------- 共用小工具 ---------- */
 function credit(c, x, y, o = {}) { // 作者署名：金色斜體 + 版本
-  UI.text(c, AUTHOR + '  ' + VERSION, x, y, { size: o.size || 13, color: '#ffd24a', stroke: o.stroke === undefined ? 'rgba(0,0,0,.55)' : o.stroke, strokeW: 3.5, italic: true, align: o.align || 'center', weight: 800 });
+  UI.text(c, AUTHOR + '  ' + VERSION, x, y, { size: o.size || 13, color: o.color || '#ffd24a', stroke: o.stroke === undefined ? 'rgba(0,0,0,.55)' : o.stroke, strokeW: 3.5, italic: true, align: o.align || 'center', weight: 800 });
 }
 function checkMark(c, x, y, s, ok) {
   c.save();
@@ -32,6 +32,13 @@ function wallet(c, x, y) {
 }
 
 /* ---------- 設定視窗 ---------- */
+/* 畫面方向：橫式／直式／自動。手機（APK）會通知外殼旋轉畫面，網頁版則直接換版面 */
+const ORIENTS = [['land', '橫式'], ['port', '直式'], ['auto', '自動']];
+function setOrient(m) {
+  Save.d.orient = m; Save.write();
+  try { if (window.AndroidBridge && AndroidBridge.setOrientation) AndroidBridge.setOrientation(m); } catch (e) { }
+  resize();
+}
 const SettingsPanel = {
   open: false, confirm: false,
   show() { this.open = true; this.confirm = false; SND.play('click'); },
@@ -39,7 +46,7 @@ const SettingsPanel = {
     if (!this.open) return false;
     if (this.confirm) {
       if (UI.clicked('s_no')) { this.confirm = false; SND.play('back'); }
-      if (UI.clicked('s_yes')) { Save.d = Save.def(); Save.write(); this.confirm = false; this.open = false; SND.play('lose'); SND.refreshMusic(); Game.go('cover'); }
+      if (UI.clicked('s_yes')) { Save.d = Save.def(); Save.write(); setOrient(Save.d.orient); this.confirm = false; this.open = false; SND.play('lose'); SND.refreshMusic(); resize(); Game.go('cover'); }
       return true;
     }
     if (UI.clicked('s_close')) { this.open = false; SND.play('back'); }
@@ -47,34 +54,64 @@ const SettingsPanel = {
     if (UI.clicked('s_mus')) { Save.d.music = !Save.d.music; Save.write(); SND.refreshMusic(); SND.play('click'); }
     if (UI.clicked('s_vib')) { Save.d.vib = !Save.d.vib; Save.write(); vibrate(60); SND.play('click'); }
     if (UI.clicked('s_dpad')) { Save.d.dpad = !Save.d.dpad; Save.write(); SND.play('click'); }
+    for (const [m] of ORIENTS) if (UI.clicked('s_o_' + m) && orientMode() !== m) { setOrient(m); SND.play('click'); }
     if (UI.clicked('s_reset')) { this.confirm = true; SND.play('click'); }
     return true;
   },
   back() { if (!this.open) return false; if (this.confirm) this.confirm = false; else this.open = false; SND.play('back'); return true; },
+  /* 三段式選擇器（橫式／直式／自動） */
+  orientRow(c, x, y, w, h, size) {
+    const cur = orientMode(), gap = 4, bw = (w - gap * 2) / 3;
+    ORIENTS.forEach(([m, label], i) => UI.button(c, 's_o_' + m, x + i * (bw + gap), y, bw, h, label, { style: cur === m ? 'orange' : 'dark', size, noHit: false }));
+  },
   draw(c) {
     if (!this.open) return;
-    c.fillStyle = 'rgba(0,0,0,.62)'; c.fillRect(0, 0, W, H);
+    c.fillStyle = 'rgba(0,0,0,.62)'; c.fillRect(0, 0, SW, SH);
     UI.clearHits();
-    UI.panel(c, 36, 150, W - 72, 620, { r: 28 });
-    UI.text(c, '設定', W / 2, 204, { size: 38, color: '#8a4a10', align: 'center', weight: 900 });
     const rows = [['音效', 'sound', 's_snd', '開', '關'], ['背景音樂', 'music', 's_mus', '開', '關'], ['震動', 'vib', 's_vib', '開', '關'], ['螢幕方向鍵', 'dpad', 's_dpad', '顯示', '隱藏']];
-    rows.forEach((r, i) => {
-      const y = 250 + i * 76, on = Save.d[r[1]];
-      UI.text(c, r[0], 66, y + 26, { size: 23, color: '#6b4318', weight: 900 });
-      UI.button(c, r[2], 270, y, 118, 52, on ? r[3] : r[4], { style: on ? 'green' : 'dark', size: 22 });
-      if (i === 3 && !on) UI.text(c, '隱藏後在畫面滑動或點一下來跳', 66, y + 56, { size: 11.5, color: '#8a6a3a', weight: 700 });
-    });
-    UI.button(c, 's_reset', 66, 566, W - 132, 52, '清除所有進度', { style: 'red', size: 20 });
-    UI.button(c, 's_close', 100, 640, W - 200, 60, '完成', { style: 'blue', size: 26 });
-    credit(c, W / 2, 735, { size: 14, stroke: null });
+    if (LAND) {
+      const pw = 660, ph = 368, px = (SW - pw) / 2, py = (SH - ph) / 2;
+      UI.panel(c, px, py, pw, ph, { r: 28 });
+      UI.text(c, '設定', SW / 2, py + 34, { size: 34, color: '#8a4a10', align: 'center', weight: 900 });
+      const cw = 296, gx = 28, x0 = px + (pw - 2 * cw - gx) / 2;
+      rows.forEach((r, i) => {
+        const cx = x0 + (i % 2) * (cw + gx), y = py + 66 + Math.floor(i / 2) * 62, on = Save.d[r[1]];
+        UI.text(c, r[0], cx + 4, y + 25, { size: 21, color: '#6b4318', weight: 900 });
+        UI.button(c, r[2], cx + cw - 112, y, 112, 50, on ? r[3] : r[4], { style: on ? 'green' : 'dark', size: 21 });
+      });
+      const oy = py + 196;
+      UI.text(c, '畫面方向', x0 + 4, oy + 25, { size: 21, color: '#6b4318', weight: 900 });
+      this.orientRow(c, x0 + cw + gx - 70, oy, cw + 70, 50, 20);
+      UI.text(c, '「自動」會跟著手機轉；「橫式」是建議的玩法', x0 + 4, oy + 62, { size: 12.5, color: '#8a6a3a', weight: 700 });
+      UI.button(c, 's_reset', x0, py + 290, 220, 52, '清除所有進度', { style: 'red', size: 19 });
+      UI.button(c, 's_close', x0 + 2 * cw + gx - 250, py + 286, 250, 58, '完成', { style: 'blue', size: 26 });
+      credit(c, SW / 2, py + ph - 13, { size: 12.5, stroke: null, color: '#b87a0c' });
+    } else {
+      UI.panel(c, 36, 110, W - 72, 700, { r: 28 });
+      UI.text(c, '設定', W / 2, 166, { size: 38, color: '#8a4a10', align: 'center', weight: 900 });
+      rows.forEach((r, i) => {
+        const y = 206 + i * 70, on = Save.d[r[1]];
+        UI.text(c, r[0], 66, y + 26, { size: 23, color: '#6b4318', weight: 900 });
+        UI.button(c, r[2], 270, y, 118, 52, on ? r[3] : r[4], { style: on ? 'green' : 'dark', size: 22 });
+        if (i === 3 && !on) UI.text(c, '隱藏後在畫面滑動或點一下來跳', 66, y + 60, { size: 11.5, color: '#8a6a3a', weight: 700 });
+      });
+      const oy = 206 + 4 * 70;
+      UI.text(c, '畫面方向', 66, oy + 26, { size: 23, color: '#6b4318', weight: 900 });
+      this.orientRow(c, 190, oy, 198, 52, 19);
+      UI.text(c, '「自動」會跟著手機轉；「橫式」是建議的玩法', 66, oy + 66, { size: 11.5, color: '#8a6a3a', weight: 700 });
+      UI.button(c, 's_reset', 66, 596, W - 132, 52, '清除所有進度', { style: 'red', size: 20 });
+      UI.button(c, 's_close', 100, 676, W - 200, 60, '完成', { style: 'blue', size: 26 });
+      credit(c, W / 2, 776, { size: 14, stroke: null });
+    }
     if (this.confirm) {
-      c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(0, 0, W, H); UI.clearHits();
-      UI.panel(c, 50, 330, W - 100, 250, { r: 26 });
-      UI.text(c, '確定要清除嗎？', W / 2, 382, { size: 30, color: '#a02a1a', align: 'center', weight: 900 });
-      UI.text(c, '所有關卡、金幣、造型都會歸零', W / 2, 428, { size: 16, color: '#6b4318', align: 'center', weight: 800, maxW: W - 140 });
-      UI.text(c, '此動作無法復原', W / 2, 454, { size: 16, color: '#a02a1a', align: 'center', weight: 800 });
-      UI.button(c, 's_no', 76, 484, 140, 56, '取消', { style: 'blue', size: 22 });
-      UI.button(c, 's_yes', W - 76 - 140, 484, 140, 56, '確定清除', { style: 'red', size: 22 });
+      c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(0, 0, SW, SH); UI.clearHits();
+      const pw = LAND ? 500 : W - 100, ph = LAND ? 250 : 250, px = (SW - pw) / 2, py = LAND ? (SH - ph) / 2 : 330;
+      UI.panel(c, px, py, pw, ph, { r: 26 });
+      UI.text(c, '確定要清除嗎？', SW / 2, py + 52, { size: 30, color: '#a02a1a', align: 'center', weight: 900 });
+      UI.text(c, '所有關卡、金幣、造型都會歸零', SW / 2, py + 98, { size: 16, color: '#6b4318', align: 'center', weight: 800, maxW: pw - 60 });
+      UI.text(c, '此動作無法復原', SW / 2, py + 124, { size: 16, color: '#a02a1a', align: 'center', weight: 800 });
+      UI.button(c, 's_no', px + 26, py + 154, (pw - 76) / 2, 56, '取消', { style: 'blue', size: 22 });
+      UI.button(c, 's_yes', px + pw - 26 - (pw - 76) / 2, py + 154, (pw - 76) / 2, 56, '確定清除', { style: 'red', size: 22 });
     }
   },
 };
@@ -89,7 +126,7 @@ class CoverScene {
       { x: 64, y: 438, skin: 'pink', hat: 'flower', ph: 0, s: 1.1 },
       { x: 388, y: 452, skin: 'blue', hat: 'cowboy', ph: 2.1, s: 1.1 },
     ];
-    SND.music('cover'); Weather.init('pollen'); FX.clear();
+    SND.music('cover'); Weather.init('pollen', SW, 0, SH); FX.clear();
   }
   onBack() { return SettingsPanel.back(); }
   onDown(x, y) { UI.pointerDown(x, y); }
@@ -128,7 +165,7 @@ class CoverScene {
     Scenes.hills(c, W, 330, 16, '#9fd9ad', 2); Scenes.hills(c, W, 360, 14, '#62c05c', 5, .03);
     for (let i = 0; i < 10; i++) { const tx = 14 + i * 46 + (i % 2) * 6, ty = 386 + Math.sin(i * 2.1) * 5; Props.draw(c, i % 3 === 1 ? 'bush' : 'tree', tx, ty, t, i / 10, 0); }
     // 池塘
-    c.fillStyle = vgrad(c, 392, H, ['#46b4ea', '#2284c6', '#0f4f86']); c.fillRect(0, 396, W, H);
+    c.fillStyle = vgrad(c, 392, SH, ['#46b4ea', '#2284c6', '#0f4f86']); c.fillRect(0, 396, W, SH);
     c.fillStyle = vgrad(c, 392, 470, ['rgba(255,255,255,.35)', 'rgba(255,255,255,0)']); c.fillRect(0, 396, W, 80);
     c.strokeStyle = 'rgba(255,255,255,.22)'; c.lineWidth = 2; c.lineCap = 'round';
     for (let i = 0; i < 16; i++) { const yy = 420 + i * 32 + Math.sin(i) * 6, xx = ((t * (10 + i % 4 * 4) + i * 83) % (W + 120)) - 60; c.beginPath(); c.moveTo(xx, yy); c.quadraticCurveTo(xx + 20, yy - 5, xx + 40, yy); c.stroke(); }
@@ -153,7 +190,8 @@ class CoverScene {
     c.restore();
   }
 
-  draw(c) {
+  draw(c) { if (LAND) this.drawL(c); else this.drawP(c); }
+  drawP(c) {
     const t = this.t;
     this.background(c, t);
     // 蜜蜂飛過
@@ -251,7 +289,7 @@ class MapScene {
   onMove(x, y) { UI.pointerMove(x, y); }
   onUp(x, y) {
     UI.pointerUp(x, y);
-    if (this.sw && !SettingsPanel.open) { const dx = x - this.sw.x, dy = y - this.sw.y; if (Math.abs(dx) > 70 && Math.abs(dy) < 70) this.changeWorld(dx < 0 ? 1 : -1); }
+    if (this.sw && !SettingsPanel.open && !(LAND && this.sw.x > 324)) { const dx = x - this.sw.x, dy = y - this.sw.y; if (Math.abs(dx) > 70 && Math.abs(dy) < 70) this.changeWorld(dx < 0 ? 1 : -1); }
     this.sw = null;
   }
   onKey(k) {
@@ -281,10 +319,11 @@ class MapScene {
     this.shake = Math.max(0, this.shake - dt);
   }
 
-  draw(c) {
+  draw(c) { if (LAND) this.drawL(c); else this.drawP(c); }
+  drawP(c) {
     const w = WORLDS[this.wi], t = this.t, acc = w.accent, wi = this.wi;
-    c.fillStyle = vgrad(c, 0, H, [shade(acc, -.62), shade(acc, -.86)]); c.fillRect(0, 0, W, H);
-    c.save(); c.strokeStyle = 'rgba(255,255,255,.045)'; c.lineWidth = 18; for (let x = -H; x < W + 40; x += 52) { c.beginPath(); c.moveTo(x, H); c.lineTo(x + H, 0); c.stroke(); } c.restore();
+    c.fillStyle = vgrad(c, 0, SH, [shade(acc, -.62), shade(acc, -.86)]); c.fillRect(0, 0, W, SH);
+    c.save(); c.strokeStyle = 'rgba(255,255,255,.045)'; c.lineWidth = 18; for (let x = -SH; x < W + 40; x += 52) { c.beginPath(); c.moveTo(x, SH); c.lineTo(x + SH, 0); c.stroke(); } c.restore();
     // 兩旁的裝飾
     const deco = [[28, 340, 0], [424, 360, 1], [30, 470, 2], [420, 520, 3], [34, 620, 4], [418, 745, 0], [30, 780, 1], [300, 345, 2]];
     c.save(); c.globalAlpha = .55;
@@ -336,7 +375,7 @@ class MapScene {
     }
 
     // 下方資訊列
-    c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(0, 812, W, H - 812); c.fillStyle = acc; c.fillRect(0, 810, W, 3);
+    c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(0, 812, W, SH - 812); c.fillStyle = acc; c.fillRect(0, 810, W, 3);
     const sd = levelDef(levelId(wi, this.sel)), lid = levelId(wi, this.sel), unl = Save.unlocked(lid), st = Save.starsOf(lid);
     UI.text(c, `第 ${this.sel + 1} 關 · ${sd.def.name}`, 18, 832, { size: 21, color: '#fff', stroke: 'rgba(0,0,0,.6)', strokeW: 5, weight: 900, maxW: 270 });
     UI.stars(c, 384, 832, st, 24, 3, 3, 1);
@@ -408,7 +447,7 @@ class ShopScene {
         if (lv >= u.max) continue;
         if (!this.spend(u.cost[lv])) continue;
         Save.d.up[u.id] = lv + 1; Save.write(); SND.play('buy'); this.bounce = 1; this.say(`${u.name} 升到 Lv.${lv + 1}!`, '#9bff7a');
-        FX.burst(225, H - 205, 18, { type: 'star', color: ['#ffe14a', '#fff'], min: 80, max: 240, g: 300, s0: 5, s1: 9, l0: .5, l1: 1 });
+        FX.burst(LAND ? 131 : 225, LAND ? SH - 250 : SH - 205, 18, { type: 'star', color: ['#ffe14a', '#fff'], min: 80, max: 240, g: 300, s0: 5, s1: 9, l0: .5, l1: 1 });
       }
       if (UI.clicked('sh_gem')) {
         if (Save.d.gems < 1) { SND.play('deny'); this.say('還沒有寶石:打倒魔王或拿三顆星就有', '#ff9a86'); }
@@ -420,15 +459,16 @@ class ShopScene {
       if (UI.clicked('sh_act')) {
         const id = this.tab === 1 ? this.pSkin : this.pHat, it = list.find(x => x.id === id);
         if (!Save.d[ownedKey].includes(id)) {
-          if (this.spend(it.cost)) { Save.d[ownedKey].push(id); Save.d[eqKey] = id; Save.write(); SND.play('buy'); this.bounce = 1; this.say(`買到「${it.name}」並已穿上!`, '#9bff7a'); FX.burst(225, H - 640, 20, { type: 'star', color: ['#ffe14a', '#fff', '#ff8fc4'], min: 80, max: 260, g: 300, s0: 5, s1: 9, l0: .5, l1: 1.1 }); }
+          if (this.spend(it.cost)) { Save.d[ownedKey].push(id); Save.d[eqKey] = id; Save.write(); SND.play('buy'); this.bounce = 1; this.say(`買到「${it.name}」並已穿上!`, '#9bff7a'); FX.burst(LAND ? 131 : 225, LAND ? SH - 250 : SH - 640, 20, { type: 'star', color: ['#ffe14a', '#fff', '#ff8fc4'], min: 80, max: 260, g: 300, s0: 5, s1: 9, l0: .5, l1: 1.1 }); }
         } else if (Save.d[eqKey] !== id) { Save.d[eqKey] = id; Save.write(); SND.play('power'); this.bounce = 1; this.say(`已換上「${it.name}」`, '#9bff7a'); }
       }
     }
   }
 
-  draw(c) {
+  draw(c) { if (LAND) this.drawL(c); else this.drawP(c); }
+  drawP(c) {
     const t = this.t;
-    c.fillStyle = vgrad(c, 0, H, ['#2b6f4a', '#123a2a']); c.fillRect(0, 0, W, H);
+    c.fillStyle = vgrad(c, 0, SH, ['#2b6f4a', '#123a2a']); c.fillRect(0, 0, W, SH);
     // 展示台
     c.save(); c.beginPath(); c.rect(0, 64, W, 252); c.clip();
     c.fillStyle = vgrad(c, 64, 316, ['#74d6a0', '#2f8d62']); c.fillRect(0, 64, W, 252);
@@ -438,7 +478,7 @@ class ShopScene {
     ell(c, 225, 282, 112, 24, 'rgba(0,0,0,.25)'); ell(c, 225, 276, 108, 22, '#d9b46a', '#8c6a22', 3); ell(c, 225, 270, 108, 22, '#f2d28a', '#8c6a22', 3);
     const bn = this.bounce > 0 ? Math.abs(Math.sin(this.bounce * 8)) * 18 * this.bounce : 0;
     FrogArt.front(c, 225, 268, { s: 1.5, t, skin: this.pSkin, hat: this.pHat, mood: 'happy', blink: (t % 3.3) < .12 ? 1 : 0, sy: 1 + Math.sin(t * 2.4) * .015, z: bn, look: [Math.sin(t * .9) * .6, 0] });
-    FX.draw(c, y => H - y);
+    FX.draw(c, y => SH - y);
     const ps = skinOf(this.pSkin), ph = HATS.find(h => h.id === this.pHat);
     UI.text(c, `${ps.name}${ph && ph.id !== 'none' ? ' + ' + ph.name : ''}`, 225, 304, { size: 19, color: '#fff', stroke: 'rgba(0,0,0,.65)', strokeW: 5, align: 'center', weight: 900, maxW: 380 });
     topBar(c, '蛙蛙商店', { backId: 'sh_back', titleX: 118 });
@@ -504,7 +544,7 @@ class ShopScene {
     // 動作按鈕
     const it = list.find(x => x.id === pv) || list[0], owned = Save.d[ownedKey].includes(it.id), eq = Save.d[eqKey] === it.id;
     const barY = 852;
-    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(0, barY - 8, W, H - barY + 8);
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(0, barY - 8, W, SH - barY + 8);
     if (!owned) { const can = Save.d.coins >= it.cost; UI.button(c, 'sh_act', 70, barY, 310, 52, '', { style: can ? 'gold' : 'dark', size: 22, icon: (cc, x, yy, s) => { UI.text(cc, '購買', x - 56, yy + 1, { size: 22, color: '#fff', stroke: 'rgba(20,30,40,.75)', strokeW: 5, weight: 900 }); Icons.coin(cc, x + 10, yy, s * .9, t); UI.text(cc, fmt(it.cost), x + 26, yy + 1, { size: 22, color: '#fff', stroke: 'rgba(20,30,40,.75)', strokeW: 5, weight: 900 }); }, iconSize: 28 }); }
     else if (!eq) UI.button(c, 'sh_act', 70, barY, 310, 52, '穿上', { style: 'green', size: 24 });
     else UI.button(c, 'sh_act', 70, barY, 310, 52, '使用中', { style: 'teal', size: 24, noHit: true });
@@ -526,6 +566,7 @@ class ResultScene {
   onMove(x, y) { UI.pointerMove(x, y); }
   onUp(x, y) { UI.pointerUp(x, y); }
   onKey(k) { if (k === 'Enter' || k === ' ') this.next(); if (k === 'Escape') this.onBack(); }
+  starPos(said) { return LAND ? [(SW - 700) / 2 + 190 + (said - 2) * 68, SH - (54 + 106)] : [225 + (said - 2) * 62, SH - 300]; }
   next() {
     if (this.nxt === null) { Game.go('map'); return; }
     SND.play('click'); Game.go('play', this.nxt);
@@ -533,20 +574,21 @@ class ResultScene {
   update(dt) {
     UI.frame(dt); this.t += dt; FX.update(dt);
     const r = this.r, t = this.t;
-    while (this.said < r.stars && t > .7 + this.said * .5) { SND.play(['star', 'star2', 'star3'][this.said]); this.said++; FX.burst(225 + (this.said - 2) * 62, H - 300, 14, { type: 'star', color: ['#ffe14a', '#fff'], min: 60, max: 220, g: 260, s0: 5, s1: 9, l0: .5, l1: 1 }); }
+    while (this.said < r.stars && t > .7 + this.said * .5) { SND.play(['star', 'star2', 'star3'][this.said]); this.said++; FX.burst(...this.starPos(this.said), 14, { type: 'star', color: ['#ffe14a', '#fff'], min: 60, max: 220, g: 260, s0: 5, s1: 9, l0: .5, l1: 1 }); }
     this.starShown = clamp((t - .6) / 1.6, 0, 1);
     this.coinShown = clamp((t - 1.6) / 1, 0, 1);
-    this.conf -= dt; if (this.conf <= 0 && t < 4.5) { this.conf = .12; FX.burst(rand(40, 410), H - 40, 4, { type: 'sq', color: ['#ff5a5a', '#ffd23a', '#4cc6ff', '#7be04b', '#ff8fc4'], angle: PI / 2, spread: .7, min: 380, max: 620, g: 700, s0: 3, s1: 5, l0: 1.2, l1: 1.8, shrink: false }); }
+    this.conf -= dt; if (this.conf <= 0 && t < 4.5) { this.conf = .12; FX.burst(rand(40, SW - 40), SH - 40, 4, { type: 'sq', color: ['#ff5a5a', '#ffd23a', '#4cc6ff', '#7be04b', '#ff8fc4'], angle: PI / 2, spread: .7, min: 380, max: 620, g: 700, s0: 3, s1: 5, l0: 1.2, l1: 1.8, shrink: false }); }
     if (UI.clicked('r_next')) this.next();
     if (UI.clicked('r_retry')) { SND.play('click'); Game.go('play', this.r.id); }
     if (UI.clicked('r_map')) { SND.play('back'); Game.go('map'); }
   }
-  draw(c) {
+  draw(c) { if (LAND) this.drawL(c); else this.drawP(c); }
+  drawP(c) {
     const r = this.r, t = this.t, wi = this.ld.wi, w = this.ld.world;
-    Scenes.draw(c, wi, 0, 0, W, H, t);
-    c.fillStyle = 'rgba(8,14,24,.58)'; c.fillRect(0, 0, W, H);
+    Scenes.draw(c, wi, 0, 0, W, SH, t);
+    c.fillStyle = 'rgba(8,14,24,.58)'; c.fillRect(0, 0, W, SH);
     sunburst(c, 225, 300, 520, t, 'rgba(255,230,120,.08)', 18);
-    FX.draw(c, y => H - y);
+    FX.draw(c, y => SH - y);
     // 標題
     const k = ease.outBack(clamp(t / .5, 0, 1));
     c.save(); c.translate(225, 118); c.scale(k, k);
