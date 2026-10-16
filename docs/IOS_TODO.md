@@ -1,6 +1,6 @@
 # iPhone 版待辦(給 Jay)
 
-作者:ArchieKUO　目前對應 Android / 網頁版本:v1.2.5
+作者:ArchieKUO　目前對應 Android / 網頁版本:v1.2.6
 
 > 爸爸轉告 Jay 的話:「`nmymdf/frog` 有更新,請合併後讀 `CLAUDE.md` 和 `docs/IOS_TODO.md`,照清單處理 iPhone 版。」
 
@@ -26,5 +26,6 @@ iPhone 程式在你 fork(`jaykuo0619/frog`)的 `ios` 分支、`ios/` 資料夾�
 ## 之後每次 Android 改版要跟著做(由爸爸的 Claude 加在這裡)
 | 版本 | 項目 | 規格段落 | Android 參考 |
 |---|---|---|---|
+| v1.2.6 | 修正:青蛙不能再往下跳到只露出一半的那一列(遊戲內邏輯,`www/` 合併即可,外殼不用改) | — | `www/js/play.js` `tryHop()` |
 | v1.2.5 | 首頁新增「離開遊戲」鈕:**iPhone 不要顯示**(只要不定義 `AndroidBridge.exitApp` 就不會出現);失敗畫面返回鍵改回地圖(只影響 Android 返回鍵) | IOS_PORT「要實作的橋接」 | `www/js/core.js` `canExit()`、`www/js/scenes.js` `ExitDialog` |
 | v1.2.3 | 圖示皇冠改位置;iPhone 用的新圖示 | IOS_PORT「要照搬的素材」 | `ios-assets/AppIcon-v1.2.5-1024.png` |

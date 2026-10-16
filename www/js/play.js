@@ -144,7 +144,7 @@ class PlayScene {
     let nrow = f.row, nx = f.x;
     if (dir === 0) nrow += jump; else if (dir === 2) nrow -= jump; else nx += (dir === 1 ? 1 : -1) * TILE * jump;
     f.angT = dir * PI / 2;
-    const minRow = Math.floor(this.camRow + .001);
+    const minRow = Math.ceil(this.camRow - .001); // v1.2.6：不能往下跳到只露出一半的那一列（青蛙會被畫面下緣切掉）
     const bump = () => { f.sy = .85; f.sx = 1.1; f.mood = 'normal'; SND.play('bump'); f.ang = f.angT; };
     if (nrow >= this.rows || nrow < minRow) return bump();
     if (nx < TILE / 2 - 8 || nx > W - TILE / 2 + 8) return bump();
