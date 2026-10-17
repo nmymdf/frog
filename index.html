@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b1a12">
+<!-- iPhone：加到主畫面後全螢幕、有圖示（作者：ArchieKUO；圖示與設定檔檔名帶版本，換版時由 tools/bump_version.sh 一起改名） -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="青蛙過河">
+<meta name="format-detection" content="telephone=no">
+<meta name="app-version" content="v1.2.7">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-v1.2.7.png">
+<link rel="icon" type="image/png" href="icons/icon-192-v1.2.7.png">
+<link rel="manifest" href="manifest-v1.2.7.webmanifest">
+<script>
+/* iPhone：畫面不要延伸到瀏海／圓角底下，橫式時左右的控制鍵才不會被瀏海擋住；並擋掉雙指縮放手勢 */
+(function () {
+  try {
+    if (/iP(hone|ad|od)/.test(navigator.userAgent)) {
+      var m = document.querySelector('meta[name=viewport]');
+      m.setAttribute('content', m.getAttribute('content').replace(',viewport-fit=cover', ''));
+    }
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  } catch (e) { }
+})();
+</script>
+<title>青蛙過河</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b1a12;overflow:hidden;touch-action:none;
+    user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  canvas{display:block;position:absolute;left:0;top:0;width:100%;height:100%;touch-action:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="js/core.js?v=1.2.7"></script>
+<script src="js/audio.js?v=1.2.7"></script>
+<script src="js/ui.js?v=1.2.7"></script>
+<script src="js/art_icons.js?v=1.2.7"></script>
+<script src="js/art_frog.js?v=1.2.7"></script>
+<script src="js/art_world.js?v=1.2.7"></script>
+<script src="js/art_objs.js?v=1.2.7"></script>
+<script src="js/art_plat.js?v=1.2.7"></script>
+<script src="js/art_boss.js?v=1.2.7"></script>
+<script src="js/worlds.js?v=1.2.7"></script>
+<script src="js/levelgen.js?v=1.2.7"></script>
+<script src="js/play.js?v=1.2.7"></script>
+<script src="js/play_draw.js?v=1.2.7"></script>
+<script src="js/scenes.js?v=1.2.7"></script>
+<script src="js/scenes_land.js?v=1.2.7"></script>
+<script src="js/main.js?v=1.2.7"></script>
+</body>
+</html>
