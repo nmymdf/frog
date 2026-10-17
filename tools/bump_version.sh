@@ -12,5 +12,5 @@ sed -i "s/VERSION = '$OLD'/VERSION = '$NEW'/" www/js/core.js
 for f in www/icons/*-$OLD.png www/manifest-$OLD.webmanifest; do
   [ -e "$f" ] && git mv -f "$f" "${f//$OLD/$NEW}" 2>/dev/null || { [ -e "$f" ] && mv "$f" "${f//$OLD/$NEW}"; }
 done
-sed -i "s/$OLD/$NEW/g" www/index.html www/manifest-$NEW.webmanifest
+sed -i "s/$OLD/$NEW/g; s/\.js?v=${OLD#v}\"/.js?v=${NEW#v}\"/g" www/index.html www/manifest-$NEW.webmanifest
 echo "版本 $OLD → $NEW（記得更新 README 的版本說明後再提交）"

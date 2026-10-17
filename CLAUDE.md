@@ -39,7 +39,7 @@ Frogger 風格的 HTML5 Canvas 小遊戲,給爸爸(含長輩)玩。6 個世界 �
 - 下載:`https://github.com/nmymdf/frog/raw/apk/FrogCross-vX.Y.Z.apk`(前後換行)
 
 ## 目前狀態(每次改版更新)
-- Android v1.2.6;網頁版同版;iPhone:規格與交接文件已備好(v1.2.6),等 Jay 開始做
+- Android v1.2.7;網頁版同版;iPhone:規格與交接文件已備好(v1.2.7),等 Jay 開始做
 - **待決定:簽章金鑰。** 目前的金鑰檔放在 repo(`android/frogcross.keystore`)且 repo 是公開的,
   不符合 READFIRST「金鑰不能 commit」。要改成放在雲端機密環境變數/GitHub Secrets,
   換新金鑰會讓已安裝的人再移除重裝一次。
